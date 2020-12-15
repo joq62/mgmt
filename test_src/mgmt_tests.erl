@@ -52,41 +52,34 @@ setup()->
     % start dbase
     
     rpc:call('10250@c1',init,stop,[]), 
-    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","rm -rf dbase_application",5000)]),
-    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000)]),
- %   io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","make -C dbase_application",5000)]),
-    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","erl -sname 10250 -setcookie abc -detached",5000)]),
     timer:sleep(2000),
-    
-    {pong,'10250@c1',dbase}=rpc:call('10250@c1',dbase,ping,[]), 
-    io:format("~p~n",[{?MODULE,?LINE,rpc:call('10250@c1',dbase,ping,[])}]),
-
-
-    rpc:call('10250@c2',init,stop,[]), 
+    pang=net_adm:ping('10250@c1'),
+    DbaseApp="dbase_application",
+    GitUser="joq62",
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","rm -rf "++DbaseApp,5000)]),
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","git clone https://github.com/"++GitUser++"/"++DbaseApp++".git",5000)]),
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","make -C "++DbaseApp,5000)]),
+    {pong,'10250@c1',dbase_application}=rpc:call('10250@c1',dbase_application,ping,[]), 
+    io:format("~p~n",[rpc:call('10250@c1',dbase_application,services,[])]), 
+   
+    rpc:call('10250@c2',init,stop,[]),
+    timer:sleep(2000),
+    pang=net_adm:ping('10250@c2'), 
     my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","rm -rf dbase_application",5000),
     my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000),
     my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","make -C dbase_application",5000),
-    {pong,'10250@c2',dbase}=rpc:call('10250@c2',dbase,ping,[]), 
-    io:format("~p~n",[{?MODULE,?LINE,rpc:call('10250@c2',dbase,ping,[])}]),
-
-    rpc:call('10250@c0',init,stop,[]), 
+    {pong,'10250@c2',dbase_application}=rpc:call('10250@c2',dbase_application,ping,[]), 
+    io:format("~p~n",[rpc:call('10250@c2',dbase_application,services,[])]),
+ 
+    rpc:call('10250@c0',init,stop,[]),
+    timer:sleep(2000), 
+    pang=net_adm:ping('10250@c0'),
     my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","rm -rf dbase_application",5000),
     my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000),
     my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","make -C dbase_application",5000),
-    {pong,'10250@c0',dbase}=rpc:call('10250@c0',dbase,ping,[]), 
-    io:format("~p~n",[{?MODULE,?LINE,rpc:call('10250@c0',dbase,ping,[])}]),
+    {pong,'10250@c0',dbase_application}=rpc:call('10250@c0',dbase_application,ping,[]), 
+    io:format("~p~n",[rpc:call('10250@c0',dbase_application,services,[])]), 
 
-    
- %   rpc:call('10250@c0',init,stop,[]), 
- %   my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","rm -rf dbase_application",5000),
- %   my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000),
- %   my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","make -C dbase_application",5000),
- %   {pong,'10250@c0',dbase}=rpc:call('10250@c0',dbase,ping,[]), 
- %   my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","erl -sname 10250 -detached -setcookie abc",5000),
- %   my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","erl -sname 10250 -detached -setcookie abc",5000),
- %   my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","erl -sname 10250 -detached -setcookie abc",5000),
-
-  
     ?assertEqual(ok,application:start(mgmt)),
     ok=mgmt:init_cluster(),
     ?assertEqual(ok,application:start(iaas)),

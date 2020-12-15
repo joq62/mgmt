@@ -33,7 +33,6 @@ init_dbase()->
     {ok,LocalHostId}=net:gethostname(),
     DbaseVm=list_to_atom(?DbaseVmId++"@"++LocalHostId),
     {ok,Info}=file:consult(?InitFile),
-    
     rpc:call(DbaseVm,dbase,init_table_info,[Info],5000),
     ok.
 % --------------------------------------------------------------------
