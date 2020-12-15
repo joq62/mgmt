@@ -28,7 +28,8 @@
 %% --------------------------------------------------------------------
 -define(HbInterval,20*1000).
 
--export([init_cluster/0	 
+-export([init_dbases/0,
+	 init_cluster/0	 
 	]).
 
 -export([start/0,
@@ -59,6 +60,9 @@ ping()->
 
 init_cluster()-> 
     gen_server:call(?MODULE, {init_cluster},infinity).
+
+init_dbases()-> 
+    gen_server:call(?MODULE, {init_dbases},infinity).
 
 %%-----------------------------------------------------------------------
 
@@ -100,6 +104,9 @@ handle_call({ping},_From,State) ->
     Reply={pong,node(),?MODULE},
     {reply, Reply, State};
 
+handle_call({init_dbases},_From,State) ->
+    Reply=rpc:call(node(),mgmt_dbases,init,[],20*1000),
+    {reply, Reply, State};
 
 handle_call({init_cluster},_From,State) ->
     Reply=rpc:call(node(),cluster,init,[],20*1000),

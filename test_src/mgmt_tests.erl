@@ -50,8 +50,9 @@ setup()->
     ssh:start(),
     ?assertEqual(ok,application:start(common)),
     % start dbase
-    
+    rpc:call('10250@c0',init,stop,[]),  
     rpc:call('10250@c1',init,stop,[]), 
+    rpc:call('10250@c2',init,stop,[]),  
     timer:sleep(2000),
     pang=net_adm:ping('10250@c1'),
     DbaseApp="dbase_application",
@@ -62,8 +63,6 @@ setup()->
     {pong,'10250@c1',dbase_application}=rpc:call('10250@c1',dbase_application,ping,[]), 
     io:format("~p~n",[rpc:call('10250@c1',dbase_application,services,[])]), 
    
-    rpc:call('10250@c2',init,stop,[]),
-    timer:sleep(2000),
     pang=net_adm:ping('10250@c2'), 
     my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","rm -rf dbase_application",5000),
     my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000),
@@ -71,8 +70,6 @@ setup()->
     {pong,'10250@c2',dbase_application}=rpc:call('10250@c2',dbase_application,ping,[]), 
     io:format("~p~n",[rpc:call('10250@c2',dbase_application,services,[])]),
  
-    rpc:call('10250@c0',init,stop,[]),
-    timer:sleep(2000), 
     pang=net_adm:ping('10250@c0'),
     my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","rm -rf dbase_application",5000),
     my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","git clone https://github.com/joq62/dbase_application.git",5000),
