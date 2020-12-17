@@ -13,6 +13,7 @@ test:
 	cp ../common/src/*app ebin;
 	erlc -o ebin ../common/src/*.erl;
 #	dbase
+	cp test_src/*.hrl ebin;
 	cp ../dbase_service/src/*app ebin;
 	erlc -o ebin ../dbase_service/src/*.erl;
 #	iaas

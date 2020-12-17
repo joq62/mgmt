@@ -3,36 +3,36 @@
 %%% @doc: : 
 %%% Manage Computers
 %%% 
-%%% Created : 
+%%% Created :  
 %%% -------------------------------------------------------------------
 -module(mgmt). 
-
+ 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
-%-include("timeout.hrl").
-%-include("log.hrl").
-%-include("config.hrl").
-%% --------------------------------------------------------------------
 
+%% --------------------------------------------------------------------
+-define(DbaseVmId,"10250").
 
 %% --------------------------------------------------------------------
 %% Key Data structures
 %% 
 %% --------------------------------------------------------------------
--record(state, {services}).
+-record(state, {}).
 
-
+ 
 
 %% --------------------------------------------------------------------
 %% Definitions 
 %% --------------------------------------------------------------------
--export([services/0	 
+-define(HbInterval,20*1000).
+
+-export([init_dbases/0,
+	 init_cluster/0	 
 	]).
 
--export([boot/0,
-	 start/0,
+-export([start/0,
 	 stop/0,
 	 ping/0
 	]).
@@ -47,8 +47,7 @@
 
 %% Asynchrounus Signals
 
-boot()->
-    application:start(?MODULE).
+
 
 %% Gen server functions
 
@@ -59,11 +58,14 @@ stop()-> gen_server:call(?MODULE, {stop},infinity).
 ping()-> 
     gen_server:call(?MODULE, {ping},infinity).
 
+init_cluster()-> 
+    gen_server:call(?MODULE, {init_cluster},infinity).
+
+init_dbases()-> 
+    gen_server:call(?MODULE, {init_dbases},infinity).
+
 %%-----------------------------------------------------------------------
 
-services()-> 
-    gen_server:call(?MODULE, {services},infinity).
-   
 %%----------------------------------------------------------------------
 
 
@@ -82,29 +84,12 @@ services()->
 %% --------------------------------------------------------------------
 
 init([]) ->
+    % Assum that dbase running
+    {ok,LocalHostId}=net:gethostname(),
+    DbaseVm=list_to_atom(?DbaseVmId++"@"++LocalHostId),
+    {pong,_,_}=rpc:call(DbaseVm,dbase,ping,[]),
+    {ok, #state{}}.
     
-    ok=application:start(common),
-    ok=application:start(dbase),
-    ok=application:start(oam),
-
-    {ok,[{application,oam,InfoOam}]}=file:consult("./ebin/oam.app"),
-    {vsn,VsnOam}=lists:keyfind(vsn,1,InfoOam),
-
-    {ok,[{application,dbase,InfoDbase}]}=file:consult("./ebin/dbase.app"),
-    {vsn,VsnDbase}=lists:keyfind(vsn,1,InfoDbase),
-
-
-    {ok,[{application,common,InfoCommon}]}=file:consult("./ebin/common.app"),
-    {vsn,VsnCommon}=lists:keyfind(vsn,1,InfoCommon),
-    {ok,[{application,mgmt,InfoApp}]}=file:consult("./ebin/mgmt.app"),
-    {vsn,VsnApp}=lists:keyfind(vsn,1,InfoApp),
-
-    {ok, #state{services=[{"dbase",VsnDbase},
-			  {"oam",VsnOam},
-			  {"common",VsnCommon},
-			  {"mgmt",VsnApp}
-			 ]}}.
-
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
 %% Description: Handling call messages
@@ -119,10 +104,14 @@ handle_call({ping},_From,State) ->
     Reply={pong,node(),?MODULE},
     {reply, Reply, State};
 
-
-handle_call({services},_From,State) ->
-    Reply=State#state.services,
+handle_call({init_dbases},_From,State) ->
+    Reply=rpc:call(node(),mgmt_dbases,init,[],20*1000),
     {reply, Reply, State};
+
+handle_call({init_cluster},_From,State) ->
+    Reply=rpc:call(node(),cluster,init,[],20*1000),
+    {reply, Reply, State};
+
 
 handle_call({stop}, _From, State) ->
     {stop, normal, shutdown_ok, State};
@@ -184,7 +173,26 @@ code_change(_OldVsn, State, _Extra) ->
 %% --------------------------------------------------------------------
 %% Internal functions
 %% --------------------------------------------------------------------
+connect()->
+    io:format(" ~p~n",[{?MODULE,?LINE}]),
+    connect(100,50).
 
+connect(0,_)->
+    ok;
+connect(N,T) ->
+    io:format("10250@c0.local.sthlm ~p~n",[{net_kernel:connect_node('10250@c0'),?MODULE,?LINE}]),
+    io:format("10250@c1.local.sthlm ~p~n",[{net_kernel:connect_node('10250@c1'),?MODULE,?LINE}]), 
+    io:format("10250@c2.local.sthlm ~p~n",[{net_kernel:connect_node('10250@c2'),?MODULE,?LINE}]),
+    case net_kernel:connect_node('10250@c0') of
+	true->
+	    io:format("true ~p~n",[{?MODULE,?LINE}]),
+	    NewN=0;
+	false->
+	    io:format("false ~p~n",[{?MODULE,?LINE}]),
+	    NewN=N-1,
+	    timer:sleep(T*100)
+    end,
+    connect(NewN,T).
 %% --------------------------------------------------------------------
 %% Function: 
 %% Description:

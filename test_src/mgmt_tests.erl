@@ -29,16 +29,22 @@
 start()->
     ?debugMsg("Test system setup"),
     ?assertEqual(ok,setup()),
+    ?assertEqual(ok,setup2()),
 
     %% Start application tests
-    ?debugMsg("Start cluster_test"),
-    ?assertEqual(ok,cluster_test:start()),
-     ?debugMsg("Stop cluster_test"),
+    ?debugMsg("Start normal_test"),
+    ?assertEqual(ok,normal_test:start()),
+    ?debugMsg("Stop normal_test"),
+
+%    ?debugMsg("Start cluster_test"),
+%    ?assertEqual(ok,cluster_test:start()),
+%     ?debugMsg("Stop cluster_test"),
     
     ?debugMsg("Start stop_test_system:start"),
     %% End application tests
     cleanup(),
     ok.
+
 
 
 %% --------------------------------------------------------------------
@@ -47,8 +53,34 @@ start()->
 %% Returns: non
 %% --------------------------------------------------------------------
 setup()->
+    ok=application:start(mgmt),
+    ?assertEqual([{"dbase","1.0.0"},
+		  {"oam","1.0.0"},
+		  {"common","1.0.0"},
+		  {"mgmt","1.0.0"}],mgmt:services()),
+    ?assertMatch({pong,_,dbase},dbase:ping()),
+    ?assertMatch({pong,_,oam},oam:ping()),
+    ?assertMatch({pong,_,common},common:ping()),
+    ?assertMatch({pong,_,mgmt},mgmt:ping()),
+    ok.
+%% --------------------------------------------------------------------
+%% Function:start/0 
+%% Description: Initiate the eunit tests, set upp needed processes etc
+%% Returns: non
+%% --------------------------------------------------------------------
+setup2()->
     ssh:start(),
-    ?assertEqual(ok,application:start(common)),
+    %Start computer node
+    rpc:call('computer@c0',init,stop,[]),  
+    rpc:call('computer@c1',init,stop,[]), 
+    rpc:call('computer@c2',init,stop,[]),  
+
+    timer:sleep(2000),
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.200",60200,"joq62","festum01","erl -sname computer -setcookie abc -detached",5000)]),
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.201",60201,"joq62","festum01","erl -sname computer -setcookie abc -detached",5000)]),
+    io:format("~p~n",[my_ssh:ssh_send("192.168.0.202",60202,"joq62","festum01","erl -sname computer -setcookie abc -detached",5000)]),
+    
+    
     % start dbase
     rpc:call('10250@c0',init,stop,[]),  
     rpc:call('10250@c1',init,stop,[]), 
@@ -77,10 +109,11 @@ setup()->
     {pong,'10250@c0',dbase_application}=rpc:call('10250@c0',dbase_application,ping,[]), 
     io:format("~p~n",[rpc:call('10250@c0',dbase_application,services,[])]), 
 
-    ?assertEqual(ok,application:start(mgmt)),
-    ok=mgmt:init_cluster(),
-    ?assertEqual(ok,application:start(iaas)),
-    timer:sleep(10000),
+    ok=oam:preload_dbase(),
+    computer:get_computer_status(running),
+ %   ?assertEqual(ok,application:start(iaas)),
+ %   timer:sleep(5000),
+    ?assertEqual([{"c2",running},{"c1",running},{"c0",running}],db_computer:status(running)),
 
     ok.
 

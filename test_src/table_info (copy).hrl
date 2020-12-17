@@ -9,5 +9,5 @@
 
 [db_passwd,"joq62","20Qazxsw20"].
 
-[db_deployment_spec,"calc","1.0.0",no_restrictions,["rm -rf calc","git clone https://github.com/joq62/calc.git","make -C calc"]].
+[db_deployment_spec,"calc","1.0.0",no_restrictions,"https://github.com/joq62/calc.git"].
 
