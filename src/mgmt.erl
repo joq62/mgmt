@@ -83,26 +83,11 @@ services()->
 
 init([]) ->
     
-    ok=application:start(common),
-    ok=application:start(dbase),
-    ok=application:start(oam),
+  %  ok=application:start(common),
+  %  ok=application:start(dbase),
+  %  ok=application:start(oam),
 
-    {ok,[{application,oam,InfoOam}]}=file:consult("./ebin/oam.app"),
-    {vsn,VsnOam}=lists:keyfind(vsn,1,InfoOam),
-
-    {ok,[{application,dbase,InfoDbase}]}=file:consult("./ebin/dbase.app"),
-    {vsn,VsnDbase}=lists:keyfind(vsn,1,InfoDbase),
-
-
-    {ok,[{application,common,InfoCommon}]}=file:consult("./ebin/common.app"),
-    {vsn,VsnCommon}=lists:keyfind(vsn,1,InfoCommon),
-    {ok,[{application,mgmt,InfoApp}]}=file:consult("./ebin/mgmt.app"),
-    {vsn,VsnApp}=lists:keyfind(vsn,1,InfoApp),
-
-    {ok, #state{services=[{"dbase",VsnDbase},
-			  {"oam",VsnOam},
-			  {"common",VsnCommon},
-			  {"mgmt",VsnApp}
+    {ok, #state{services=[
 			 ]}}.
 
 %% --------------------------------------------------------------------
